@@ -507,10 +507,10 @@ class Component(VBase):
         self.name = name.upper()
 
     def __getitem__(self, name):
-        return self.__getattr__(name)
+        return self.__getattr__(name.lower())
 
     def __setitem__(self, name, value):
-        return self.__setattr__(name, value)
+        return self.__setattr__(name.lower(), value)
 
     def __getattr__(self, name):
         """
