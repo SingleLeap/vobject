@@ -1081,7 +1081,7 @@ def readComponents(streamOrString, validate=False, transform=True,
                 vline = textLineToContentLine(line, n)
             except VObjectError as e:
                 if tolerantMultiline and lastName is not None:
-                    lastContentLine = stack.top().contents[lastName]
+                    lastContentLine = stack.top().getChildValue(lastName)
                     lastContentLine.value += '\n' + line
 
                 elif ignoreUnreadable:
