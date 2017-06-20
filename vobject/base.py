@@ -1062,7 +1062,7 @@ class Stack:
 
 
 def readComponents(streamOrString, validate=False, transform=True,
-                   ignoreUnreadable=False, allowQP=False):
+                   ignoreUnreadable=False, allowQP=False, tolerantMultiline=False):
     """
     Generate one Component at a time from a stream.
     """
@@ -1075,19 +1075,28 @@ def readComponents(streamOrString, validate=False, transform=True,
         stack = Stack()
         versionLine = None
         n = 0
+        lastName = None
         for line, n in getLogicalLines(stream, allowQP):
-            if ignoreUnreadable:
-                try:
-                    vline = textLineToContentLine(line, n)
-                except VObjectError as e:
+            try:
+                vline = textLineToContentLine(line, n)
+            except VObjectError as e:
+                if tolerantMultiline and lastName is not None:
+                    lastContentLine = stack.top()[lastName]
+                    lastContentLine.value += '\n' + line
+
+                elif ignoreUnreadable:
                     if e.lineNumber is not None:
                         msg = "Skipped line {lineNumber}, message: {msg}"
                     else:
                         msg = "Skipped a line, message: {msg}"
                     logger.error(msg.format(**{'lineNumber': e.lineNumber, 'msg': str(e)}))
                     continue
-            else:
-                vline = textLineToContentLine(line, n)
+
+                else:
+                    raise
+
+            lastName = vline.name
+
             if vline.name == "VERSION":
                 versionLine = vline
                 stack.modifyTop(vline)
@@ -1123,6 +1132,7 @@ def readComponents(streamOrString, validate=False, transform=True,
                     raise ParseError(err.format(stack.topName()), n)
             else:
                 stack.modifyTop(vline)  # not a START or END line
+
         if stack.top():
             if stack.topName() is None:
                 logger.warning("Top level component was never named")
@@ -1137,12 +1147,12 @@ def readComponents(streamOrString, validate=False, transform=True,
 
 
 def readOne(stream, validate=False, transform=True, ignoreUnreadable=False,
-            allowQP=False):
+            allowQP=False, tolerantMultiline=False):
     """
     Return the first component from stream.
     """
     return next(readComponents(stream, validate, transform, ignoreUnreadable,
-                               allowQP))
+                               allowQP, tolerantMultiline))
 
 
 # --------------------------- version registry ---------------------------------
