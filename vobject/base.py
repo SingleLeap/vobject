@@ -506,6 +506,12 @@ class Component(VBase):
                                "uses BEGIN.")
         self.name = name.upper()
 
+    def __getitem__(self, name):
+        return self.__getattr__(name)
+
+    def __setitem__(self, name, value):
+        return self.__setattr__(name, value)
+
     def __getattr__(self, name):
         """
         For convenience, make self.contents directly accessible.
